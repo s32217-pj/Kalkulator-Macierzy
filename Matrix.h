@@ -1,5 +1,7 @@
 #pragma once
 #include <initializer_list>
+#include <iostream>
+#include <iomanip>
 
 template<class T = double>
 class Matrix
@@ -30,13 +32,18 @@ public:
 	Matrix<T>& operator*=(const Matrix& other);
 	T* operator[](const int& index);
 
-	friend std::ostream& operator<<(ostream& os, Matrix m);
+	//support Iterators
+	class Iterator;
+	Iterator begin() { return Iterator(&_matrix[0][0]); }
+	Iterator end() { return Iterator(&_matrix[_height][_width-1]); }
 
-	//transposes array
+
+
+	//transposes matrix
 	Matrix<T>& Transpose();
 
 	/// <summary>
-	/// Creates new transposed array from acutal one
+	/// Creates new transposed matrix from acutal one
 	/// </summary>
 	/// <returns></returns>
 	Matrix<T> CreateTransposed() const;
@@ -45,10 +52,63 @@ public:
 	int GetRows() const { return _height; }
 	int GetCols() const { return _width; }
 
-	bool IsError() { return _width < 0 || _height < 0; }
+	bool IsError() const { return _width < 0 || _height < 0; }
+
+	//output stream overload
+	friend std::ostream& operator<<(std::ostream& os, Matrix<T>& m)
+	{
+		for (int x = 0; x < m.GetRows(); x++)
+		{
+			for (int y = 0; y < m.GetCols(); y++)
+			{
+				os << std::setw(3);
+				os << m[x][y];
+			}
+			os << "\n";
+		}
+
+		return os;
+	}
 };
 
-#include "Matrix.h"
+template<class T>
+class Matrix<T>::Iterator
+{
+private:
+	T* m_iterator;
+public:
+
+	using value_type = T;
+	using reference = T&;
+	using pointer = T*;
+	using Iterator_category = std::random_access_iterator_tag;
+	using difference_type = ptrdiff_t;
+
+	//przepraszam za skopiowanie tego wszystkiego, ale nie chcialo mi sie tego po prostu pisac samemu od poczatku
+	//nie jest to pierwszy raz kiedy pisze taki Iterator
+
+	constexpr Iterator(T* iter = nullptr) : m_iterator{ iter } {}
+
+	constexpr bool operator==(const Iterator& other) const noexcept { return m_iterator == other.m_iterator; }
+	constexpr bool operator!=(const Iterator& other) const noexcept { return m_iterator != other.m_iterator; }
+	constexpr reference operator*() const noexcept { return *m_iterator; }
+	constexpr pointer operator->() const noexcept { return m_iterator; }
+	constexpr Iterator& operator++() noexcept { ++m_iterator; return *this; }
+	constexpr Iterator operator++(int) noexcept { Iterator tmp(*this); ++(*this); return tmp; }
+	constexpr Iterator& operator--() noexcept { --m_iterator; return *this; }
+	constexpr Iterator operator--(int) noexcept { Iterator tmp(*this); --(*this); return tmp; }
+	constexpr Iterator& operator+=(const difference_type other) noexcept { m_iterator += other; return *this; }
+	constexpr Iterator& operator-=(const difference_type other) noexcept { m_iterator -= other; return *this; }
+	constexpr Iterator operator+(const difference_type other) const noexcept { return Iterator(m_iterator + other); }
+	constexpr Iterator operator-(const difference_type other) const noexcept { return Iterator(m_iterator - other); }
+	constexpr Iterator operator+(const Iterator& other) const noexcept { return Iterator(*this + other.m_iterator); }
+	constexpr difference_type operator-(const Iterator& other) const noexcept { return std::distance(m_iterator, other.m_iterator); }
+	constexpr reference operator[](std::size_t index) const { return m_iterator[index]; }
+	constexpr bool operator<(const Iterator& other) const noexcept { return m_iterator < other.m_iterator; }
+	constexpr bool operator>(const Iterator& other) const noexcept { return m_iterator > other.m_iterator; }
+	constexpr bool operator<=(const Iterator& other) const noexcept { return m_iterator <= other.m_iterator; }
+	constexpr bool operator>=(const Iterator& other) const noexcept { return m_iterator >= other.m_iterator; }
+};
 
 template <class T>
 void Matrix<T>::Init(const int& width, const int& height)
