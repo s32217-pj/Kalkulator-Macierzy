@@ -32,12 +32,19 @@ public:
 	Matrix<T>& operator*=(const Matrix& other);
 	T* operator[](const int& index);
 
-	//support Iterators
-	class Iterator;
-	Iterator begin() { return Iterator(&_matrix[0][0]); }
-	Iterator end() { return Iterator(&_matrix[_height][_width-1]); }
+	/// <summary>
+	/// Changes dimensions of matrix, if dimmensions are smaller, data is lost
+	/// If Dimensions are higher, zeroes are added
+	/// </summary>
+	/// <returns>Matrix with changed dimensions</returns>
+	Matrix<T>& ChangeDimensions(const int& new_width, const int& new_height);
 
-
+	/// <summary>
+	/// Creates copy of a matrix with changed dimensions, if dimmensions are smaller, data is lost
+	/// If Dimensions are higher, zeroes are added 
+	/// </summary>
+	/// <returns>Copy of a matrix with changed dimensions</returns>
+	Matrix<T> ChangeDimensionsCopy(const int& new_width, const int& new_height);
 
 	//transposes matrix
 	Matrix<T>& Transpose();
@@ -52,7 +59,7 @@ public:
 	int GetRows() const { return _height; }
 	int GetCols() const { return _width; }
 
-	bool IsError() const { return _width < 0 || _height < 0; }
+	bool IsError() const { return _width <= 0 || _height <= 0; }
 
 	//output stream overload
 	friend std::ostream& operator<<(std::ostream& os, Matrix<T>& m)
@@ -71,51 +78,15 @@ public:
 	}
 };
 
-template<class T>
-class Matrix<T>::Iterator
-{
-private:
-	T* m_iterator;
-public:
-
-	using value_type = T;
-	using reference = T&;
-	using pointer = T*;
-	using Iterator_category = std::random_access_iterator_tag;
-	using difference_type = ptrdiff_t;
-
-	//przepraszam za skopiowanie tego wszystkiego, ale nie chcialo mi sie tego po prostu pisac samemu od poczatku
-	//nie jest to pierwszy raz kiedy pisze taki Iterator
-
-	constexpr Iterator(T* iter = nullptr) : m_iterator{ iter } {}
-
-	constexpr bool operator==(const Iterator& other) const noexcept { return m_iterator == other.m_iterator; }
-	constexpr bool operator!=(const Iterator& other) const noexcept { return m_iterator != other.m_iterator; }
-	constexpr reference operator*() const noexcept { return *m_iterator; }
-	constexpr pointer operator->() const noexcept { return m_iterator; }
-	constexpr Iterator& operator++() noexcept { ++m_iterator; return *this; }
-	constexpr Iterator operator++(int) noexcept { Iterator tmp(*this); ++(*this); return tmp; }
-	constexpr Iterator& operator--() noexcept { --m_iterator; return *this; }
-	constexpr Iterator operator--(int) noexcept { Iterator tmp(*this); --(*this); return tmp; }
-	constexpr Iterator& operator+=(const difference_type other) noexcept { m_iterator += other; return *this; }
-	constexpr Iterator& operator-=(const difference_type other) noexcept { m_iterator -= other; return *this; }
-	constexpr Iterator operator+(const difference_type other) const noexcept { return Iterator(m_iterator + other); }
-	constexpr Iterator operator-(const difference_type other) const noexcept { return Iterator(m_iterator - other); }
-	constexpr Iterator operator+(const Iterator& other) const noexcept { return Iterator(*this + other.m_iterator); }
-	constexpr difference_type operator-(const Iterator& other) const noexcept { return std::distance(m_iterator, other.m_iterator); }
-	constexpr reference operator[](std::size_t index) const { return m_iterator[index]; }
-	constexpr bool operator<(const Iterator& other) const noexcept { return m_iterator < other.m_iterator; }
-	constexpr bool operator>(const Iterator& other) const noexcept { return m_iterator > other.m_iterator; }
-	constexpr bool operator<=(const Iterator& other) const noexcept { return m_iterator <= other.m_iterator; }
-	constexpr bool operator>=(const Iterator& other) const noexcept { return m_iterator >= other.m_iterator; }
-};
-
 template <class T>
 void Matrix<T>::Init(const int& width, const int& height)
 {
 	_matrix = new T*[height];
 	for (int x = 0; x < height; x++)
-		_matrix[x] = new T[width];
+		_matrix[x] = new T[width]{ 0 }; //create filled with zeroes
+
+	_width = width;
+	_height = height;
 }
 
 template<class T>
@@ -283,6 +254,38 @@ template<class T>
 T* Matrix<T>::operator[](const int& index)
 {
 	return _matrix[index];
+}
+
+template<class T>
+inline Matrix<T>& Matrix<T>::ChangeDimensions(const int& new_width, const int& new_height)
+{
+	if (new_width <= 0 || new_height <= 0)
+		return *this; //do nothing
+
+	Matrix<T> copy = *this;
+	Destroy();
+	Init(new_width, new_height);
+
+	for (int x = 0; x < copy.GetRows() && x < new_height; x++)
+		for (int y = 0; y < copy.GetCols() && y < new_width; y++)
+			*this[x][y] = copy[x][y];
+
+	return *this;
+}
+
+template<class T>
+inline Matrix<T> Matrix<T>::ChangeDimensionsCopy(const int& new_width, const int& new_height)
+{
+	if (new_width <= 0 || new_height <= 0)
+		return Matrix(); //do nothing
+
+	Matrix<T> copy = Matrix(new_width, new_height);
+
+	for (int x = 0; x < new_height; x++)
+		for (int y = 0; y < new_width; y++)
+			copy[x][y] = *this[x][y];
+
+	return copy;
 }
 
 template<class T>
