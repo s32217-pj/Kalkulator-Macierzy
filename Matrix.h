@@ -268,7 +268,7 @@ inline Matrix<T>& Matrix<T>::ChangeDimensions(const int& new_width, const int& n
 
 	for (int x = 0; x < copy.GetRows() && x < new_height; x++)
 		for (int y = 0; y < copy.GetCols() && y < new_width; y++)
-			*this[x][y] = copy[x][y];
+			(*this)[x][y] = copy[x][y];
 
 	return *this;
 }
@@ -283,7 +283,7 @@ inline Matrix<T> Matrix<T>::ChangeDimensionsCopy(const int& new_width, const int
 
 	for (int x = 0; x < new_height; x++)
 		for (int y = 0; y < new_width; y++)
-			copy[x][y] = *this[x][y];
+			copy[x][y] = (*this)[x][y];
 
 	return copy;
 }

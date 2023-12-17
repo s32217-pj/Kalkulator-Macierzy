@@ -107,7 +107,7 @@ void Option_Change()
             if (x == -1 || y == -1)
                 return;
 
-            if (x < 0 || y < 0 || x > current->GetCols() || y > current->GetRows())
+            if (x < 0 || y < 0 || x >= current->GetCols() || y >= current->GetRows())
             {
                 cout << "x or y is invalid!";
                 WaitForInput();
@@ -116,7 +116,7 @@ void Option_Change()
             }
 
             cout << "New value: ";
-            cin >> *current[y][x];
+            cin >> (*current)[y][x];
             break;
         }
         case 2:
